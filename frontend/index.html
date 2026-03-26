@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI-900 Training Portal</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+</head>
+
+<body class="login-page">
+
+  <div class="login-container">
+
+    <!-- BRAND -->
+    <div class="login-brand">
+      <div class="brand-badge">AI-900</div>
+      <h1>Training Portal</h1>
+      <p>College Event — Exam Preparation Platform</p>
+    </div>
+
+    <!-- LOGIN CARD -->
+    <div class="login-card">
+
+      <h2>Welcome Back</h2>
+      <p class="subtitle">Select your role and login</p>
+
+      <!-- ROLE TOGGLE -->
+      <div class="role-toggle">
+        <button class="role-btn active" id="btn-student" onclick="setRole('student')">👨‍🎓 Student</button>
+        <button class="role-btn" id="btn-staff" onclick="setRole('staff')">👨‍🏫 Staff</button>
+      </div>
+
+      <!-- ERROR MSG -->
+      <div id="error-msg" class="error-msg hidden"></div>
+
+      <!-- IDENTIFIER -->
+      <div class="form-group">
+        <label id="id-label">Roll Number</label>
+        <input type="text" id="identifier" placeholder="Enter your roll number" />
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="password" placeholder="Enter your password" />
+      </div>
+
+      <!-- LOGIN BUTTON -->
+      <button class="btn-primary" onclick="handleLogin()">
+        <span id="btn-text">Login</span>
+      </button>
+
+    </div>
+
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:8000"; // change after deploy
+    let currentRole = "student";
+
+    // ─── ROLE SWITCH ──────────────────────────────────
+    function setRole(role) {
+      currentRole = role;
+
+      document.getElementById("btn-student").classList.toggle("active", role === "student");
+      document.getElementById("btn-staff").classList.toggle("active", role === "staff");
+
+      if (role === "staff") {
+        document.getElementById("id-label").textContent = "Email Address";
+        document.getElementById("identifier").placeholder = "Enter your email";
+        document.getElementById("identifier").type = "email";
+      } else {
+        document.getElementById("id-label").textContent = "Roll Number";
+        document.getElementById("identifier").placeholder = "Enter your roll number";
+        document.getElementById("identifier").type = "text";
+      }
+
+      // clear fields on switch
+      document.getElementById("identifier").value = "";
+      document.getElementById("password").value = "";
+      document.getElementById("error-msg").classList.add("hidden");
+    }
+
+    // ─── LOGIN ────────────────────────────────────────
+    async function handleLogin() {
+      const identifier = document.getElementById("identifier").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const btnText = document.getElementById("btn-text");
+
+      if (!identifier || !password) {
+        showError("Please fill all fields!");
+        return;
+      }
+
+      btnText.textContent = "Logging in...";
+      document.getElementById("error-msg").classList.add("hidden");
+
+      try {
+        const res = await fetch(`${API}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            identifier: identifier,
+            password: password,
+            role: currentRole
+          })
+        });
+
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          showError("Invalid server response");
+          btnText.textContent = "Login";
+          return;
+        }
+
+        if (!res.ok) {
+          const errMsg = typeof data.detail === "string" ? data.detail : "Invalid credentials!";
+          showError(errMsg);
+          btnText.textContent = "Login";
+          return;
+        }
+
+        // Save to localStorage
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("name", data.name);
+        localStorage.setItem("id", data.id);
+
+        // Redirect based on role
+        if (data.role === "staff") {
+          window.location.href = "staff-dashboard.html";
+        } else {
+          window.location.href = "student-dashboard.html";
+        }
+
+      } catch (err) {
+        showError("Server error. Please try again.");
+        btnText.textContent = "Login";
+      }
+    }
+
+    // ─── SHOW ERROR ───────────────────────────────────
+    function showError(msg) {
+      const errDiv = document.getElementById("error-msg");
+      errDiv.textContent = msg;
+      errDiv.classList.remove("hidden");
+    }
+
+    // Enter key support
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") handleLogin();
+    });
+  </script>
+
+</body>
+</html>

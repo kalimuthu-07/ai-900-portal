@@ -41,7 +41,7 @@ def upload_mark(mark: MarkUpload, authorization: str = Header(...)):
 
     return {"message": "Mark uploaded successfully"}
 
-# ✅ All marks (Staff) - with roll_number
+# ✅ All marks (Staff) - with roll_number + date
 @router.get("/all")
 def get_all_marks(authorization: str = Header(...)):
     user = get_current_user(authorization)
@@ -54,7 +54,7 @@ def get_all_marks(authorization: str = Header(...)):
 
     return result.data
 
-# ✅ Top performers (Staff) - with roll_number
+# ✅ Top performers - date + roll_number included (FIXED!)
 @router.get("/top-performers")
 def get_top_performers(authorization: str = Header(...)):
     user = get_current_user(authorization)
@@ -62,9 +62,9 @@ def get_top_performers(authorization: str = Header(...)):
         raise HTTPException(status_code=403, detail="Only staff can view")
 
     result = supabase.table("marks") \
-        .select("student_id, score, users!marks_student_id_fkey(name, roll_number)") \
+        .select("student_id, score, date, users!marks_student_id_fkey(name, roll_number)") \
         .order("score", desc=True) \
-        .limit(10) \
+        .limit(1000) \
         .execute()
 
     return result.data
@@ -83,15 +83,15 @@ def get_my_marks(authorization: str = Header(...)):
 
     return result.data
 
-# ✅ Leaderboard (Any logged in user)
+# ✅ Leaderboard - date + roll_number included (FIXED!)
 @router.get("/leaderboard")
 def get_leaderboard(authorization: str = Header(...)):
     get_current_user(authorization)
 
     result = supabase.table("marks") \
-        .select("student_id, score, users!marks_student_id_fkey(name)") \
+        .select("student_id, score, date, users!marks_student_id_fkey(name, roll_number)") \
         .order("score", desc=True) \
-        .limit(10) \
+        .limit(1000) \
         .execute()
 
     return result.data

@@ -7,6 +7,66 @@
   <link rel="stylesheet" href="style.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .card-header-row h3 { margin-bottom: 0; }
+    .filter-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .date-filter { display: flex; flex-direction: column; gap: 0.3rem; }
+    .date-filter label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .date-filter input[type="date"] {
+      padding: 0.5rem 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      background: white;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+    .date-filter input[type="date"]:focus { border-color: var(--primary); }
+    .btn-clear {
+      padding: 0.5rem 0.75rem;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: var(--text-light);
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+      align-self: flex-end;
+    }
+    .btn-clear:hover { border-color: var(--error); color: var(--error); }
+    .filter-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: var(--primary);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+  </style>
 </head>
 
 <body class="dashboard-page">
@@ -23,22 +83,10 @@
 
   <!-- TILES -->
   <div class="tiles">
-    <div class="tile">
-      <h3 id="totalStudents">0</h3>
-      <p>Students</p>
-    </div>
-    <div class="tile">
-      <h3 id="totalMarks">0</h3>
-      <p>Marks</p>
-    </div>
-    <div class="tile">
-      <h3 id="avgScore">0</h3>
-      <p>Average</p>
-    </div>
-    <div class="tile">
-      <h3 id="topScore">0</h3>
-      <p>Top Score</p>
-    </div>
+    <div class="tile"><h3 id="totalStudents">0</h3><p>Students</p></div>
+    <div class="tile"><h3 id="totalMarks">0</h3><p>Marks</p></div>
+    <div class="tile"><h3 id="avgScore">0</h3><p>Average</p></div>
+    <div class="tile"><h3 id="topScore">0</h3><p>Top Score</p></div>
   </div>
 
   <!-- TABS -->
@@ -56,9 +104,7 @@
       <div id="upload-msg" class="success-msg hidden"></div>
       <div class="form-group">
         <label>Select Student</label>
-        <select id="student-select">
-          <option value="">Select Student</option>
-        </select>
+        <select id="student-select"><option value="">Select Student</option></select>
       </div>
       <div class="form-group">
         <label>Topic</label>
@@ -100,20 +146,24 @@
   <!-- ALL MARKS -->
   <div id="allmarks" class="tab-content hidden">
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <div class="card-header-row">
         <h3>📊 All Marks</h3>
-        <button class="btn-download" onclick="downloadReport()">⬇ Download PDF</button>
+        <div class="filter-row">
+          <div class="date-filter">
+            <label>Filter by Date</label>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <input type="date" id="filter-date" onchange="filterMarksByDate()"/>
+              <button class="btn-clear" onclick="clearDateFilter()">✕ Clear</button>
+            </div>
+          </div>
+          <button class="btn-download" onclick="downloadReport()">⬇ Download PDF</button>
+        </div>
       </div>
+      <div id="filter-info" class="filter-info hidden"></div>
       <div class="table-wrapper">
         <table>
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Roll No</th>
-              <th>Topic</th>
-              <th>Score</th>
-              <th>Date</th>
-            </tr>
+            <tr><th>Name</th><th>Roll No</th><th>Topic</th><th>Score</th><th>Date</th></tr>
           </thead>
           <tbody id="marks-body">
             <tr><td colspan="5" class="loading">Loading...</td></tr>
@@ -126,10 +176,20 @@
   <!-- LEADERBOARD -->
   <div id="toppers" class="tab-content hidden">
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <div class="card-header-row">
         <h3>🏆 Leaderboard</h3>
-        <button class="btn-download" onclick="downloadToppers()">⬇ Download PDF</button>
+        <div class="filter-row">
+          <div class="date-filter">
+            <label>Filter by Date</label>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <input type="date" id="topper-filter-date" onchange="filterToppersByDate()"/>
+              <button class="btn-clear" onclick="clearTopperFilter()">✕ Clear</button>
+            </div>
+          </div>
+          <button class="btn-download" onclick="downloadToppers()">⬇ Download PDF</button>
+        </div>
       </div>
+      <div id="topper-filter-info" class="filter-info hidden"></div>
       <div id="toppers-list" class="toppers-list">
         <p class="loading">Loading...</p>
       </div>
@@ -139,19 +199,15 @@
 </div>
 
 <script>
-const API = "https://ai-900-portal.onrender.com";
+const API = "http://127.0.0.1:8000"; // change to render url after deploy
 const token = localStorage.getItem("token");
 const role = localStorage.getItem("role");
 
-// Auth check
-if (!token || role !== "staff") {
-  window.location.href = "index.html";
-}
+if (!token || role !== "staff") window.location.href = "index.html";
 
 document.getElementById("staff-name").innerText = localStorage.getItem("name") || "Staff";
 document.getElementById("mark-date").value = new Date().toISOString().split("T")[0];
 
-// Load on start
 loadStudents();
 loadStats();
 
@@ -161,7 +217,6 @@ function showTab(tab, btn) {
   document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
   document.getElementById(tab).classList.remove("hidden");
   btn.classList.add("active");
-
   if (tab === "allmarks") loadAllMarks();
   if (tab === "toppers") loadTop();
 }
@@ -169,18 +224,14 @@ function showTab(tab, btn) {
 // ─── LOAD STUDENTS DROPDOWN ───────────────────────────
 async function loadStudents() {
   try {
-    const res = await fetch(`${API}/marks/students`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(`${API}/marks/students`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
     const select = document.getElementById("student-select");
     select.innerHTML = "<option value=''>Select Student</option>";
     data.forEach(s => {
       select.innerHTML += `<option value="${s.id}">${s.name} (${s.roll_number})</option>`;
     });
-  } catch (err) {
-    console.error("Load students error:", err);
-  }
+  } catch (err) { console.error(err); }
 }
 
 // ─── ADD STUDENT ──────────────────────────────────────
@@ -190,10 +241,7 @@ async function addStudent() {
   const password = document.getElementById("spass").value.trim();
   const msg = document.getElementById("add-msg");
 
-  if (!name || !roll_number || !password) {
-    alert("Please fill all fields!");
-    return;
-  }
+  if (!name || !roll_number || !password) { alert("Please fill all fields!"); return; }
 
   try {
     const res = await fetch(`${API}/auth/add-student`, {
@@ -201,9 +249,7 @@ async function addStudent() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, roll_number, password })
     });
-
     const data = await res.json();
-
     if (res.ok) {
       msg.textContent = `✅ Student "${name}" added! Roll No: ${roll_number}`;
       msg.classList.remove("hidden");
@@ -214,11 +260,9 @@ async function addStudent() {
       loadStats();
       setTimeout(() => msg.classList.add("hidden"), 4000);
     } else {
-      alert(data.detail || "Failed to add student!");
+      alert(data.detail || "Failed!");
     }
-  } catch (err) {
-    alert("Server error!");
-  }
+  } catch (err) { alert("Server error!"); }
 }
 
 // ─── UPLOAD MARK ──────────────────────────────────────
@@ -229,21 +273,14 @@ async function uploadMark() {
   const date = document.getElementById("mark-date").value;
   const msg = document.getElementById("upload-msg");
 
-  if (!student_id || !topic || !score || !date) {
-    alert("Please fill all fields!");
-    return;
-  }
+  if (!student_id || !topic || !score || !date) { alert("Please fill all fields!"); return; }
 
   try {
     const res = await fetch(`${API}/marks/upload`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ student_id, topic, score, date })
     });
-
     if (res.ok) {
       msg.textContent = "✅ Mark uploaded successfully!";
       msg.classList.remove("hidden");
@@ -253,138 +290,203 @@ async function uploadMark() {
       const data = await res.json();
       alert(data.detail || "Upload failed!");
     }
-  } catch (err) {
-    alert("Server error!");
-  }
+  } catch (err) { alert("Server error!"); }
 }
 
 // ─── LOAD ALL MARKS ───────────────────────────────────
 async function loadAllMarks() {
   try {
-    const res = await fetch(`${API}/marks/all`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(`${API}/marks/all`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
-    const tbody = document.getElementById("marks-body");
-    tbody.innerHTML = "";
+    window._allMarksData = data;
+    renderMarksTable(data);
+  } catch (err) { console.error(err); }
+}
 
-    if (!data.length) {
-      tbody.innerHTML = '<tr><td colspan="5" class="loading">No marks found</td></tr>';
-      return;
-    }
-
-    data.forEach(m => {
-      tbody.innerHTML += `
-        <tr>
-          <td>${m.users?.name || "—"}</td>
-          <td>${m.users?.roll_number || "—"}</td>
-          <td>${m.topic}</td>
-          <td><span class="score-badge">${m.score}</span></td>
-          <td>${m.date}</td>
-        </tr>`;
-    });
-
-    window._marksData = data;
-  } catch (err) {
-    console.error("Load marks error:", err);
+function renderMarksTable(data) {
+  const tbody = document.getElementById("marks-body");
+  tbody.innerHTML = "";
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="loading">No marks found</td></tr>';
+    window._marksData = [];
+    return;
   }
+  data.forEach(m => {
+    tbody.innerHTML += `<tr>
+      <td>${m.users?.name || "—"}</td>
+      <td>${m.users?.roll_number || "—"}</td>
+      <td>${m.topic}</td>
+      <td><span class="score-badge">${m.score}</span></td>
+      <td>${m.date}</td>
+    </tr>`;
+  });
+  window._marksData = data;
+}
+
+// ─── FILTER MARKS BY DATE ─────────────────────────────
+function filterMarksByDate() {
+  const filterDate = document.getElementById("filter-date").value;
+  const infoDiv = document.getElementById("filter-info");
+  if (!filterDate) { clearDateFilter(); return; }
+
+  // date from API: "2026-03-26", filterDate from input: "2026-03-26" — same format
+  const filtered = (window._allMarksData || []).filter(m => {
+    const d = (m.date || "").toString().substring(0, 10);
+    return d === filterDate;
+  });
+
+  renderMarksTable(filtered);
+
+  const displayDate = new Date(filterDate + "T00:00:00").toLocaleDateString("en-IN", {
+    day: "numeric", month: "long", year: "numeric"
+  });
+  infoDiv.textContent = `📅 Showing ${filtered.length} record(s) for ${displayDate}`;
+  infoDiv.classList.remove("hidden");
+}
+
+function clearDateFilter() {
+  document.getElementById("filter-date").value = "";
+  document.getElementById("filter-info").classList.add("hidden");
+  renderMarksTable(window._allMarksData || []);
 }
 
 // ─── LOAD LEADERBOARD ─────────────────────────────────
 async function loadTop() {
   try {
-    const res = await fetch(`${API}/marks/top-performers`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(`${API}/marks/top-performers`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
-    const list = document.getElementById("toppers-list");
-    list.innerHTML = "";
-    const medals = ["🥇", "🥈", "🥉"];
-
-    data.forEach((t, i) => {
-      list.innerHTML += `
-        <div class="topper-item">
-          <span class="rank">${medals[i] || "#" + (i + 1)}</span>
-          <span class="topper-name">${t.users?.name || "Unknown"}</span>
-          <span class="topper-roll">${t.users?.roll_number || ""}</span>
-          <span class="topper-score">${t.score} pts</span>
-        </div>`;
-    });
-
-    window._toppersData = data;
-  } catch (err) {
-    console.error("Load toppers error:", err);
-  }
+    window._allToppersData = data;
+    renderToppers(data);
+  } catch (err) { console.error(err); }
 }
 
-// ─── LOAD STATS (TILES) ───────────────────────────────
+function renderToppers(data) {
+  const list = document.getElementById("toppers-list");
+  list.innerHTML = "";
+  const medals = ["🥇", "🥈", "🥉"];
+  if (!data.length) {
+    list.innerHTML = '<p class="loading">No data found</p>';
+    window._toppersData = [];
+    return;
+  }
+  data.forEach((t, i) => {
+    list.innerHTML += `<div class="topper-item">
+      <span class="rank">${medals[i] || "#" + (i + 1)}</span>
+      <span class="topper-name">${t.users?.name || "Unknown"}</span>
+      <span class="topper-roll">${t.users?.roll_number || ""}</span>
+      <span class="topper-score">${t.score} pts</span>
+    </div>`;
+  });
+  window._toppersData = data;
+}
+
+// ─── FILTER TOPPERS BY DATE ───────────────────────────
+function filterToppersByDate() {
+  const filterDate = document.getElementById("topper-filter-date").value;
+  const infoDiv = document.getElementById("topper-filter-info");
+  if (!filterDate) { clearTopperFilter(); return; }
+
+  // Safe date compare — take first 10 chars to handle any timestamp format
+  const filtered = (window._allToppersData || [])
+    .filter(t => {
+      const d = (t.date || "").toString().substring(0, 10);
+      return d === filterDate;
+    })
+    .sort((a, b) => b.score - a.score);
+
+  renderToppers(filtered);
+
+  const displayDate = new Date(filterDate + "T00:00:00").toLocaleDateString("en-IN", {
+    day: "numeric", month: "long", year: "numeric"
+  });
+  infoDiv.textContent = `📅 Showing top performers for ${displayDate} (${filtered.length} records)`;
+  infoDiv.classList.remove("hidden");
+}
+
+function clearTopperFilter() {
+  document.getElementById("topper-filter-date").value = "";
+  document.getElementById("topper-filter-info").classList.add("hidden");
+  renderToppers(window._allToppersData || []);
+}
+
+// ─── LOAD STATS ───────────────────────────────────────
 async function loadStats() {
   try {
-    const res = await fetch(`${API}/marks/stats`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(`${API}/marks/stats`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
     document.getElementById("totalStudents").innerText = data.total_students;
     document.getElementById("totalMarks").innerText = data.total_marks;
     document.getElementById("avgScore").innerText = data.avg_score;
     document.getElementById("topScore").innerText = data.top_score;
-  } catch (err) {
-    console.error("Stats error:", err);
-  }
+  } catch (err) { console.error(err); }
 }
 
-// ─── DOWNLOAD PDF REPORT ──────────────────────────────
+// ─── DOWNLOAD MARKS PDF ───────────────────────────────
 function downloadReport() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+  const filterDate = document.getElementById("filter-date").value;
 
   doc.setFontSize(18);
-  doc.text("AI-900 Training Portal — Marks Report", 14, 20);
+  doc.text("AI-900 Training Portal - Marks Report", 14, 20);
   doc.setFontSize(11);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+
+  if (filterDate) {
+    const displayDate = new Date(filterDate + "T00:00:00").toLocaleDateString("en-IN", {
+      day: "numeric", month: "long", year: "numeric"
+    });
+    doc.text(`Date: ${displayDate}`, 14, 28);
+    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 34);
+  } else {
+    doc.text(`Generated: ${new Date().toLocaleDateString()} - All Dates`, 14, 28);
+  }
 
   const rows = (window._marksData || []).map(m => [
-    m.users?.name || "—",
-    m.users?.roll_number || "—",
-    m.topic,
-    m.score,
-    m.date
+    m.users?.name || "-", m.users?.roll_number || "-", m.topic, m.score, m.date
   ]);
 
   doc.autoTable({
     head: [["Name", "Roll No", "Topic", "Score", "Date"]],
     body: rows,
-    startY: 35,
+    startY: filterDate ? 40 : 35,
     styles: { fontSize: 9 },
     headStyles: { fillColor: [37, 99, 235] }
   });
 
-  doc.save("AI900_Marks_Report.pdf");
+  doc.save(filterDate ? `AI900_Marks_${filterDate}.pdf` : "AI900_Marks_Report.pdf");
 }
 
 // ─── DOWNLOAD TOPPERS PDF ─────────────────────────────
 function downloadToppers() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+  const filterDate = document.getElementById("topper-filter-date").value;
 
   doc.setFontSize(18);
-  doc.text("AI-900 Training Portal — Top Performers", 14, 20);
+  doc.text("AI-900 Training Portal - Top Performers", 14, 20);
+  doc.setFontSize(11);
+
+  if (filterDate) {
+    const displayDate = new Date(filterDate + "T00:00:00").toLocaleDateString("en-IN", {
+      day: "numeric", month: "long", year: "numeric"
+    });
+    doc.text(`Date: ${displayDate}`, 14, 28);
+  } else {
+    doc.text(`Generated: ${new Date().toLocaleDateString()} - All Dates`, 14, 28);
+  }
 
   const rows = (window._toppersData || []).map((p, i) => [
-    i + 1,
-    p.users?.name || "—",
-    p.users?.roll_number || "—",
-    p.score
+    i + 1, p.users?.name || "-", p.users?.roll_number || "-", p.score
   ]);
 
   doc.autoTable({
     head: [["Rank", "Name", "Roll No", "Score"]],
     body: rows,
-    startY: 30,
+    startY: 35,
     headStyles: { fillColor: [245, 158, 11] }
   });
 
-  doc.save("AI900_Top_Performers.pdf");
+  doc.save(filterDate ? `AI900_Toppers_${filterDate}.pdf` : "AI900_Top_Performers.pdf");
 }
 
 // ─── LOGOUT ───────────────────────────────────────────

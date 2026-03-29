@@ -6,6 +6,65 @@
   <title>Student Dashboard - AI-900</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    .card-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .card-header-row h3 { margin-bottom: 0; }
+    .filter-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .date-filter { display: flex; flex-direction: column; gap: 0.3rem; }
+    .date-filter label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .date-filter input[type="date"] {
+      padding: 0.5rem 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      background: white;
+      color: var(--text);
+      transition: border-color 0.2s;
+    }
+    .date-filter input[type="date"]:focus { border-color: var(--primary); }
+    .btn-clear {
+      padding: 0.5rem 0.75rem;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: var(--text-light);
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .btn-clear:hover { border-color: var(--error); color: var(--error); }
+    .filter-info {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: var(--primary);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+  </style>
 </head>
 <body class="dashboard-page">
 
@@ -18,16 +77,17 @@
   </nav>
 
   <div class="dashboard-container">
-    <!-- Tabs -->
+
+    <!-- TABS -->
     <div class="tabs">
-      <button class="tab active" onclick="showTab('mymarks')">📊 My Marks</button>
-      <button class="tab" onclick="showTab('leaderboard')">🏆 Leaderboard</button>
+      <button class="tab active" onclick="showTab('mymarks', this)">📊 My Marks</button>
+      <button class="tab" onclick="showTab('leaderboard', this)">🏆 Leaderboard</button>
     </div>
 
-    <!-- My Marks Tab -->
-    <div id="mymarks" class="tab-content active">
+    <!-- MY MARKS TAB -->
+    <div id="mymarks" class="tab-content">
       <div class="card">
-        <h3>My Marks</h3>
+        <h3>📊 My Marks</h3>
         <div class="table-wrapper">
           <table>
             <thead>
@@ -46,13 +106,26 @@
       </div>
     </div>
 
-    <!-- Leaderboard Tab -->
+    <!-- LEADERBOARD TAB -->
     <div id="leaderboard" class="tab-content hidden">
       <div class="card">
-        <h3>🏆 Leaderboard</h3>
+        <div class="card-header-row">
+          <h3>🏆 Leaderboard</h3>
+          <div class="filter-row">
+            <div class="date-filter">
+              <label>Filter by Date</label>
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <input type="date" id="leader-filter-date" onchange="filterLeaderboard()"/>
+                <button class="btn-clear" onclick="clearLeaderFilter()">✕ Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="leader-filter-info" class="filter-info hidden"></div>
         <div id="leaderboard-list" class="toppers-list">Loading...</div>
       </div>
     </div>
+
   </div>
 
   <script>
@@ -68,45 +141,67 @@
 
     loadMyMarks();
 
+    // ─── MY MARKS ─────────────────────────────────────
     async function loadMyMarks() {
-      const res = await fetch(`${API}/marks/my-marks`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      const tbody = document.getElementById("my-marks-body");
-      tbody.innerHTML = "";
+      try {
+        const res = await fetch(`${API}/marks/my-marks`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const tbody = document.getElementById("my-marks-body");
+        tbody.innerHTML = "";
+
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="3" class="loading">No marks yet</td></tr>';
+          return;
+        }
+
+        let total = 0;
+        data.forEach(m => {
+          total += m.score;
+          tbody.innerHTML += `
+            <tr>
+              <td>${m.topic}</td>
+              <td><span class="score-badge">${m.score}</span></td>
+              <td>${m.date}</td>
+            </tr>`;
+        });
+
+        const avg = (total / data.length).toFixed(1);
+        const avgBox = document.getElementById("avg-score");
+        avgBox.textContent = `📈 Your Average Score: ${avg} / 100`;
+        avgBox.classList.remove("hidden");
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // ─── LOAD LEADERBOARD ─────────────────────────────
+    async function loadLeaderboard() {
+      try {
+        const res = await fetch(`${API}/marks/leaderboard`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        window._allLeaderData = data;
+        renderLeaderboard(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // ─── RENDER LEADERBOARD ───────────────────────────
+    function renderLeaderboard(data) {
+      const list = document.getElementById("leaderboard-list");
+      list.innerHTML = "";
+      const medals = ["🥇", "🥈", "🥉"];
 
       if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="3" class="loading">No marks yet</td></tr>';
+        list.innerHTML = '<p class="loading">No data found for this date</p>';
         return;
       }
 
-      let total = 0;
-      data.forEach(m => {
-        total += m.score;
-        tbody.innerHTML += `
-          <tr>
-            <td>${m.topic}</td>
-            <td><span class="score-badge">${m.score}</span></td>
-            <td>${m.date}</td>
-          </tr>`;
-      });
-
-      const avg = (total / data.length).toFixed(1);
-      const avgBox = document.getElementById("avg-score");
-      avgBox.textContent = `📈 Your Average Score: ${avg} / 100`;
-      avgBox.classList.remove("hidden");
-    }
-
-    async function loadLeaderboard() {
-      const res = await fetch(`${API}/marks/leaderboard`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      const list = document.getElementById("leaderboard-list");
-      list.innerHTML = "";
       data.forEach((p, i) => {
-        const medals = ["🥇", "🥈", "🥉"];
         list.innerHTML += `
           <div class="topper-item">
             <span class="rank">${medals[i] || `#${i + 1}`}</span>
@@ -116,14 +211,46 @@
       });
     }
 
-    function showTab(tab) {
+    // ─── FILTER LEADERBOARD BY DATE ───────────────────
+    function filterLeaderboard() {
+      const filterDate = document.getElementById("leader-filter-date").value;
+      const infoDiv = document.getElementById("leader-filter-info");
+
+      if (!filterDate) { clearLeaderFilter(); return; }
+
+      const filtered = (window._allLeaderData || [])
+        .filter(p => {
+          const d = (p.date || "").toString().substring(0, 10);
+          return d === filterDate;
+        })
+        .sort((a, b) => b.score - a.score);
+
+      renderLeaderboard(filtered);
+
+      const displayDate = new Date(filterDate + "T00:00:00").toLocaleDateString("en-IN", {
+        day: "numeric", month: "long", year: "numeric"
+      });
+      infoDiv.textContent = `📅 Showing top performers for ${displayDate} (${filtered.length} records)`;
+      infoDiv.classList.remove("hidden");
+    }
+
+    // ─── CLEAR FILTER ─────────────────────────────────
+    function clearLeaderFilter() {
+      document.getElementById("leader-filter-date").value = "";
+      document.getElementById("leader-filter-info").classList.add("hidden");
+      renderLeaderboard(window._allLeaderData || []);
+    }
+
+    // ─── TAB SWITCH ───────────────────────────────────
+    function showTab(tab, btn) {
       document.querySelectorAll(".tab-content").forEach(t => t.classList.add("hidden"));
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
       document.getElementById(tab).classList.remove("hidden");
-      event.target.classList.add("active");
+      btn.classList.add("active");
       if (tab === "leaderboard") loadLeaderboard();
     }
 
+    // ─── LOGOUT ───────────────────────────────────────
     function logout() {
       localStorage.clear();
       window.location.href = "index.html";
